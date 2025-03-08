@@ -16,6 +16,8 @@ function App() {
 
   const [modalEditar, setModalEditar] = useState(false);
 
+  const [modalExcluir, setModalExcluir] = useState(false);
+
   const [clienteSelecionado, setClienteSelecionado] = useState({
     id: '',
     nome: '',
@@ -25,7 +27,7 @@ function App() {
 
   const selecionarCliente = (cliente, caso) => {
     setClienteSelecionado(cliente);
-    (caso === "Editar") && abrirFecharModalEditar()
+    (caso === "Editar") ? abrirFecharModalEditar() : abrirFecharModalExcluir();
   }
 
   const abrirFecharModalIncluir = () => {
@@ -35,6 +37,12 @@ function App() {
   const abrirFecharModalEditar = () => {
     setModalEditar(!modalEditar);
   }
+
+  const abrirFecharModalExcluir = () => {
+    setModalExcluir(!modalExcluir);
+  }
+
+  const [updateData, setUpdateData] = useState(true);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -60,6 +68,7 @@ function App() {
     await axios.post(baseUrl, clienteSelecionado)
       .then(response => {
         setData(data.concat(response.data));
+        setUpdateData(true);
         abrirFecharModalIncluir();
       }).catch(error => {
         console.log(error);
@@ -80,15 +89,31 @@ function App() {
           }
           return dadosAuxiliar;
         });
+        setUpdateData(true);
         abrirFecharModalEditar();
       }).catch(error => {
         console.log(error);
       })
     }
 
+    const pedidoDelete = async () => {
+      await axios.delete(baseUrl+"/"+clienteSelecionado.id)
+        .then(response => {
+          setData(data.filter(cliente => cliente.id !== response.data));
+          setUpdateData(true);
+          abrirFecharModalExcluir();
+        }).catch(error => {
+          console.log(error);
+        }
+      )
+    }
+
   useEffect(() => {
-    pedidoGet();
-  })
+    if (updateData) {
+      pedidoGet();
+      setUpdateData(false);
+    }
+  }, [updateData])
   
 
   return (
@@ -184,6 +209,17 @@ function App() {
         <ModalFooter>
           <button className="btn btn-primary" onClick={()=>pedidoPut()} >Salvar</button> {" "}
           <button className="btn btn-danger" onClick={()=>abrirFecharModalEditar()}>Cancelar</button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={modalExcluir}>
+        <ModalBody>
+          Confirma a exclusão do cliente : {clienteSelecionado && clienteSelecionado.nome} ?
+        </ModalBody>
+        
+        <ModalFooter>
+          <button className="btn btn-danger" onClick={()=>pedidoDelete()} >Sim</button> {" "}
+          <button className="btn btn-secondary" onClick={()=>abrirFecharModalExcluir()}>Não</button>
         </ModalFooter>
       </Modal>
     </div>
